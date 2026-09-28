@@ -2,7 +2,7 @@ import sys
 import random
 import pygame
 
-RESOLUTION = (800, 600)
+RESOLUTION = (700, 500)
 
 RIGHT = "RIGHT"
 LEFT = "LEFT"
