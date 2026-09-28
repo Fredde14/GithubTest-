@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minimalistischer Taschenrechner</title>
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        calc: {
+                            bg: '#121316',
+                            card: '#1a1c23',
+                            display: '#14161d',
+                            btn: '#232631',
+                            btnHover: '#2d313e',
+                            btnOp: '#2e3344',
+                            btnOpHover: '#3b4156',
+                            accent: '#4f46e5',
+                            accentHover: '#4338ca',
+                            textPrimary: '#f3f4f6',
+                            textSecondary: '#9ca3af'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Sanfte Animationen & Klick-Feedback */
+        .btn-tap {
+            transition: transform 0.08s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+        }
+        .btn-tap:active {
+            transform: scale(0.94);
+        }
+        /* Custom Scrollbar für die Historie */
+        .history-scroll::-webkit-scrollbar {
+            height: 4px;
+        }
+        .history-scroll::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .history-scroll::-webkit-scrollbar-thumb {
+            background: #2d313e;
+            border-radius: 2px;
+        }
+    </style>
+</head>
+<body class="bg-calc-bg text-calc-textPrimary font-sans min-h-screen flex items-center justify-center p-4 antialiased">
+
+    <main class="w-full max-w-sm bg-calc-card rounded-3xl p-6 shadow-2xl border border-gray-800/50 backdrop-blur-md">
+        
+        <!-- Header / Logo -->
+        <div class="flex justify-between items-center mb-4 px-1">
+            <span class="text-xs font-medium tracking-widest text-calc-textSecondary uppercase">Rechner</span>
+            <div class="flex space-x-1.5">
+                <div class="w-2.5 h-2.5 rounded-full bg-gray-700"></div>
+                <div class="w-2.5 h-2.5 rounded-full bg-gray-700"></div>
+            </div>
+        </div>
+
+        <!-- Display-Bereich -->
+        <div class="bg-calc-display rounded-2xl p-5 mb-6 text-right shadow-inner flex flex-col justify-end min-h-[120px] border border-gray-800/30 overflow-hidden">
+            <!-- Historie / Vorheriger Ausdruck -->
+            <div id="history" class="text-calc-textSecondary text-sm min-h-[20px] overflow-x-auto whitespace-nowrap history-scroll mb-1 font-light tracking-wide transition-all"></div>
+            <!-- Aktueller Wert / Eingabe -->
+            <div id="display" class="text-4xl font-light text-calc-textPrimary overflow-x-auto whitespace-nowrap history-scroll tracking-tight">0</div>
+        </div>
+
+        <!-- Tastatur Grid -->
+        <div class="grid grid-cols-4 gap-3">
+            <!-- Zeile 1 -->
+            <button onclick="clearAll()" class="btn-tap bg-calc-btnOp hover:bg-calc-btnOpHover text-rose-400 font-medium py-4 rounded-xl text-lg flex items-center justify-center focus:outline-none focus:ring-1 focus:ring-rose-400/30">AC</button>
+            <button onclick="toggleSign()" class="btn-tap bg-calc-btnOp hover:bg-calc-btnOpHover text-calc-textPrimary font-medium py-4 rounded-xl text-lg flex items-center justify-center focus:outline-none">±</button>
+            <button onclick="inputPercent()" class="btn-tap bg-calc-btnOp hover:bg-calc-btnOpHover text-calc-textPrimary font-medium py-4 rounded-xl text-lg flex items-center justify-center focus:outline-none">%</button>
+            <button onclick="setOperator('÷')" class="btn-tap bg-calc-btnOp hover:bg-calc-btnOpHover text-indigo-400 font-semibold py-4 rounded-xl text-xl flex items-center justify-center focus:outline-none">÷</button>
+
+            <!-- Zeile 2 -->
+            <button onclick="inputNum('7')" class="btn-tap bg-calc-btn hover:bg-calc-btnHover text-calc-textPrimary font-medium py-4 rounded-xl text-xl focus:outline-none">7</button>
+            <button onclick="inputNum('8')" class="btn-tap bg-calc-btn hover:bg-calc-btnHover text-calc-textPrimary font-medium py-4 rounded-xl text-xl focus:outline-none">8</button>
+            <button onclick="inputNum('9')" class="btn-tap bg-calc-btn hover:bg-calc-btnHover text-calc-textPrimary font-medium py-4 rounded-xl text-xl focus:outline-none">9</button>
+            <button onclick="setOperator('×')" class="btn-tap bg-calc-btnOp hover:bg-calc-btnOpHover text-indigo-400 font-semibold py-4 rounded-xl text-xl flex items-center justify-center focus:outline-none">×</button>
+
+            <!-- Zeile 3 -->
+            <button onclick="inputNum('4')" class="btn-tap bg-calc-btn hover:bg-calc-btnHover text-calc-textPrimary font-medium py-4 rounded-xl text-xl focus:outline-none">4</button>
+            <button onclick="inputNum('5')" class="btn-tap bg-calc-btn hover:bg-calc-btnHover text-calc-textPrimary font-medium py-4 rounded-xl text-xl focus:outline-none">5</button>
+            <button onclick="inputNum('6')" class="btn-tap bg-calc-btn hover:bg-calc-btnHover text-calc-textPrimary font-medium py-4 rounded-xl text-xl focus:outline-none">6</button>
+            <button onclick="setOperator('-')" class="btn-tap bg-calc-btnOp hover:bg-calc-btnOpHover text-indigo-400 font-semibold py-4 rounded-xl text-xl flex items-center justify-center focus:outline-none">−</button>
+
+            <!-- Zeile 4 -->
+            <button onclick="inputNum('1')" class="btn-tap bg-calc-btn hover:bg-calc-btnHover text-calc-textPrimary font-medium py-4 rounded-xl text-xl focus:outline-none">1</button>
+            <button onclick="inputNum('2')" class="btn-tap bg-calc-btn hover:bg-calc-btnHover text-calc-textPrimary font-medium py-4 rounded-xl text-xl focus:outline-none">2</button>
+            <button onclick="inputNum('3')" class="btn-tap bg-calc-btn hover:bg-calc-btnHover text-calc-textPrimary font-medium py-4 rounded-xl text-xl focus:outline-none">3</button>
+            <button onclick="setOperator('+')" class="btn-tap bg-calc-btnOp hover:bg-calc-btnOpHover text-indigo-400 font-semibold py-4 rounded-xl text-xl flex items-center justify-center focus:outline-none">+</button>
+
+            <!-- Zeile 5 -->
+            <button onclick="deleteLast()" class="btn-tap bg-calc-btn hover:bg-calc-btnHover text-calc-textSecondary font-medium py-4 rounded-xl text-sm flex items-center justify-center focus:outline-none">⌫</button>
+            <button onclick="inputNum('0')" class="btn-tap bg-calc-btn hover:bg-calc-btnHover text-calc-textPrimary font-medium py-4 rounded-xl text-xl focus:outline-none">0</button>
+            <button onclick="inputDecimal()" class="btn-tap bg-calc-btn hover:bg-calc-btnHover text-calc-textPrimary font-medium py-4 rounded-xl text-xl focus:outline-none">,</button>
+            <button onclick="calculate()" class="btn-tap bg-calc-accent hover:bg-calc-accentHover text-white font-semibold py-4 rounded-xl text-xl flex items-center justify-center shadow-lg shadow-indigo-500/20 focus:outline-none">=</button>
+        </div>
+
+        <!-- Tastatur-Tipp Footer -->
+        <p class="text-center text-[11px] text-calc-textSecondary/60 mt-5 font-light">
+            Tastatureingabe unterstützt
+        </p>
+    </main>
+
+    <script>
+        // Zustand des Taschenrechners
+        let currentValue = '0';
+        let previousValue = '';
+        let operator = null;
+        let shouldResetDisplay = false;
+
+        const displayEl = document.getElementById('display');
+        const historyEl = document.getElementById('history');
+
+        function updateDisplay() {
+            // Zahl formatieren (mit Komma statt Punkt anzeigen)
+            let formattedValue = currentValue.replace('.', ',');
+            displayEl.textContent = formattedValue;
+            
+            if (operator !== null && previousValue !== '') {
+                historyEl.textContent = `${previousValue.replace('.', ',')} ${operator}`;
+            } else {
+                historyEl.textContent = '';
+            }
+        }
+
+        function inputNum(num) {
+            if (currentValue === '0' || shouldResetDisplay) {
+                currentValue = num;
+                shouldResetDisplay = false;
+            } else {
+                // Maximale Länge der Eingabe beschränken
+                if (currentValue.replace(/[^0-9]/g, '').length < 12) {
+                    currentValue += num;
+                }
+            }
+            updateDisplay();
+        }
+
+        function inputDecimal() {
+            if (shouldResetDisplay) {
+                currentValue = '0.';
+                shouldResetDisplay = false;
+            } else if (!currentValue.includes('.')) {
+                currentValue += '.';
+            }
+            updateDisplay();
+        }
+
+        function setOperator(op) {
+            if (operator !== null && !shouldResetDisplay) {
+                calculate();
+            }
+            previousValue = currentValue;
+            operator = op;
+            shouldResetDisplay = true;
+            updateDisplay();
+        }
+
+        function calculate() {
+            if (operator === null || shouldResetDisplay) return;
+
+            let prev = parseFloat(previousValue);
+            let current = parseFloat(currentValue);
+            let result = 0;
+
+            if (isNaN(prev) || isNaN(current)) return;
+
+            switch (operator) {
+                case '+':
+                    result = prev + current;
+                    break;
+                case '-':
+                    result = prev - current;
+                    break;
+                case '×':
+                    result = prev * current;
+                    break;
+                case '÷':
+                    if (current === 0) {
+                        displayEl.textContent = "Fehler";
+                        historyEl.textContent = "Division durch 0 nicht möglich";
+                        resetState();
+                        return;
+                    }
+                    result = prev / current;
+                    break;
+                default:
+                    return;
+            }
+
+            // Präzision bei Fließkommazahlen korrigieren
+            result = Math.round(result * 1e10) / 1e10;
+
+            historyEl.textContent = `${previousValue.replace('.', ',')} ${operator} ${currentValue.replace('.', ',')} =`;
+            currentValue = result.toString();
+            operator = null;
+            previousValue = '';
+            shouldResetDisplay = true;
+
+            // Anzeige aktualisieren (ohne History zu überschreiben)
+            displayEl.textContent = currentValue.replace('.', ',');
+        }
+
+        function clearAll() {
+            resetState();
+            updateDisplay();
+        }
+
+        function resetState() {
+            currentValue = '0';
+            previousValue = '';
+            operator = null;
+            shouldResetDisplay = false;
+        }
+
+        function deleteLast() {
+            if (shouldResetDisplay) return;
+            if (currentValue.length === 1 || (currentValue.length === 2 && currentValue.startsWith('-'))) {
+                currentValue = '0';
+            } else {
+                currentValue = currentValue.slice(0, -1);
+            }
+            updateDisplay();
+        }
+
+        function toggleSign() {
+            if (currentValue === '0') return;
+            currentValue = (parseFloat(currentValue) * -1).toString();
+            updateDisplay();
+        }
+
+        function inputPercent() {
+            if (currentValue === '0') return;
+            currentValue = (parseFloat(currentValue) / 100).toString();
+            updateDisplay();
+        }
+
+        document.addEventListener('keydown', (event) => {
+            const key = event.key;
+
+            if (key >= '0' && key <= '9') {
+                inputNum(key);
+            } else if (key === '.' || key === ',') {
+                inputDecimal();
+            } else if (key === '+') {
+                setOperator('+');
+            } else if (key === '-') {
+                setOperator('-');
+            } else if (key === '*') {
+                setOperator('×');
+            } else if (key === '/') {
+                event.preventDefault(); // Verhindert Schnellsuche im Browser
+                setOperator('÷');
+            } else if (key === 'Enter' || key === '=') {
+                event.preventDefault();
+                calculate();
+            } else if (key === 'Backspace') {
+                deleteLast();
+            } else if (key === 'Escape') {
+                clearAll();
+            } else if (key === '%') {
+                inputPercent();
+            }
+        });
+    </script>
+</body>
+</html>
